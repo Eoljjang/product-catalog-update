@@ -15,73 +15,160 @@ class CatalogUpdateApp(TkinterDnD.Tk):
         super().__init__()
 
         self.title("Catalog Update Automation (Debug Mode)")
-        self.geometry("600x520")
+        self.geometry("620x560")
         self.resizable(False, False)
+
+        # Apply dark theme palette
+        self.configure(bg="#1e1e1e")
+        self._apply_dark_theme()
 
         self.zone1_files = []
         self.zone2_file = None
 
         self._build_ui()
 
+    def _apply_dark_theme(self):
+        """Configures ttk styles for a sleek dark mode look."""
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")
+
+        # Color definitions
+        BG_DARK = "#1e1e1e"
+        FRAME_BG = "#2d2d2d"
+        TEXT_LIGHT = "#e0e0e0"
+        ACCENT_BLUE = "#007acc"
+        ACCENT_HOVER = "#005999"
+
+        # General TTK Styles
+        self.style.configure(".", background=BG_DARK, foreground=TEXT_LIGHT)
+
+        # LabelFrame
+        self.style.configure(
+            "TLabelframe",
+            background=BG_DARK,
+            foreground=TEXT_LIGHT,
+            borderwidth=1,
+            relief="solid",
+        )
+        self.style.configure(
+            "TLabelframe.Label",
+            background=BG_DARK,
+            foreground="#a0a0a0",
+            font=("Segoe UI", 12, "bold"),
+        )
+
+        # Buttons
+        self.style.configure(
+            "Accent.TButton",
+            font=("Segoe UI", 14, "bold"),
+            background=ACCENT_BLUE,
+            foreground="#ffffff",
+            borderwidth=0,
+            focusthickness=0,
+            padding=8,
+        )
+        self.style.map(
+            "Accent.TButton",
+            background=[("active", ACCENT_HOVER), ("pressed", "#004080")],
+        )
+
+        self.style.configure(
+            "TButton",
+            font=("Segoe UI", 12),
+            background="#3c3c3c",
+            foreground=TEXT_LIGHT,
+            borderwidth=0,
+            padding=5,
+        )
+        self.style.map(
+            "TButton",
+            background=[("active", "#4a4a4a")],
+        )
+
     def _build_ui(self):
         header = ttk.Label(
-            self, text="Excel Batch Processor", font=("Segoe UI", 16, "bold")
+            self,
+            text="Catalog Update Automation",
+            font=("Segoe UI", 16, "bold"),
+            background="#1e1e1e",
+            foreground="#ffffff",
         )
-        header.pack(pady=(15, 10))
+        header.pack(pady=(20, 10))
 
         # Zone 1
         z1_frame = ttk.LabelFrame(
-            self, text=" Zone 1: Target Excel Files (Multiple) "
+            self, text="Product Catalog Files (Multiple) - Drag & Drop Here"
         )
-        z1_frame.pack(fill="x", padx=20, pady=5)
+        z1_frame.pack(fill="x", padx=25, pady=8)
 
         self.z1_box = tk.Listbox(
-            z1_frame, height=5, selectmode=tk.MULTIPLE, relief="flat", bg="#f8f9fa"
+            z1_frame,
+            height=5,
+            selectmode=tk.MULTIPLE,
+            relief="flat",
+            bg="#252526",
+            fg="#d4d4d4",
+            selectbackground="#04395e",
+            selectforeground="#ffffff",
+            highlightthickness=1,
+            highlightbackground="#3c3c3c",
+            font=("Segoe UI", 9),
         )
-        self.z1_box.pack(fill="x", padx=10, pady=5)
+        self.z1_box.pack(fill="x", padx=12, pady=8)
         self.z1_box.drop_target_register(DND_FILES)
         self.z1_box.dnd_bind("<<Drop>>", self._on_drop_zone1)
 
         z1_hint = ttk.Label(
             z1_frame,
             text="Drag and drop Excel files here (double-click to clear)",
-            font=("Segoe UI", 8, "italic"),
-            foreground="gray",
+            font=("Segoe UI", 14, "italic"),
+            background="#1e1e1e",
+            foreground="#858585",
         )
-        z1_hint.pack(pady=(0, 5))
+        z1_hint.pack(pady=(0, 8))
         self.z1_box.bind("<Double-Button-1>", lambda e: self._clear_zone1())
 
         # Zone 2
-        z2_frame = ttk.LabelFrame(self, text=" Zone 2: Product List File (Single) ")
-        z2_frame.pack(fill="x", padx=20, pady=10)
+        z2_frame = ttk.LabelFrame(self, text=" MMS Product List File - Drag & Drop")
+        z2_frame.pack(fill="x", padx=25, pady=8)
 
         self.z2_label = tk.Label(
             z2_frame,
             text="Drag & Drop Product List Excel File Here",
-            bg="#e9ecef",
+            bg="#252526",
+            fg="#858585",
             height=3,
-            relief="groove",
-            font=("Segoe UI", 9, "italic"),
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground="#3c3c3c",
+            font=("Segoe UI", 14, "italic"),
         )
-        self.z2_label.pack(fill="x", padx=10, pady=5)
+        self.z2_label.pack(fill="x", padx=12, pady=10)
         self.z2_label.drop_target_register(DND_FILES)
         self.z2_label.dnd_bind("<<Drop>>", self._on_drop_zone2)
 
         # Process Button
         self.btn_run = ttk.Button(
-            self, text="Start Processing", command=self.process_files
+            self,
+            text="Start Processing",
+            style="Accent.TButton",
+            command=self.process_files,
         )
-        self.btn_run.pack(pady=15, ipadx=10, ipady=5)
+        self.btn_run.pack(pady=(15, 5), ipadx=15)
 
         # Status Label
         self.status_var = tk.StringVar(value="Ready")
         self.lbl_status = ttk.Label(
-            self, textvariable=self.status_var, font=("Segoe UI", 9)
+            self,
+            textvariable=self.status_var,
+            font=("Segoe UI", 9),
+            background="#1e1e1e",
+            foreground="#a0a0a0",
         )
         self.lbl_status.pack(pady=5)
 
     def _show_error_dialog(self, title, error_msg, tb_text):
-        """Prints error to terminal AND pops up a detailed scrollable dialog."""
+        """Prints error to terminal AND pops up a detailed scrollable dark dialog."""
         print(f"\n{'='*20} ERROR DETECTED {'='*20}\n", file=sys.stderr)
         print(tb_text, file=sys.stderr)
         print(f"{'='*56}\n", file=sys.stderr)
@@ -89,19 +176,32 @@ class CatalogUpdateApp(TkinterDnD.Tk):
         err_win = tk.Toplevel(self)
         err_win.title(title)
         err_win.geometry("600x400")
+        err_win.configure(bg="#1e1e1e")
 
         lbl = ttk.Label(
-            err_win, text=error_msg, font=("Segoe UI", 10, "bold"), foreground="red"
+            err_win,
+            text=error_msg,
+            font=("Segoe UI", 10, "bold"),
+            background="#1e1e1e",
+            foreground="#f44747",
         )
-        lbl.pack(anchor="w", padx=10, pady=(10, 5))
+        lbl.pack(anchor="w", padx=12, pady=(12, 6))
 
-        txt = ScrolledText(err_win, wrap="none")
-        txt.pack(fill="both", expand=True, padx=10, pady=5)
+        txt = ScrolledText(
+            err_win,
+            wrap="none",
+            bg="#252526",
+            fg="#f44747",
+            insertbackground="#ffffff",
+            relief="flat",
+            font=("Consolas", 9),
+        )
+        txt.pack(fill="both", expand=True, padx=12, pady=6)
         txt.insert("1.0", tb_text)
         txt.config(state="disabled")
 
         btn = ttk.Button(err_win, text="Close", command=err_win.destroy)
-        btn.pack(pady=5)
+        btn.pack(pady=8)
 
     def _parse_drop_files(self, event_data):
         files = []
@@ -136,8 +236,9 @@ class CatalogUpdateApp(TkinterDnD.Tk):
             self.zone2_file = file_path
             self.z2_label.config(
                 text=f"Loaded: {os.path.basename(file_path)}",
-                bg="#d1e7dd",
-                fg="#0f5132",
+                bg="#1e3a1e",
+                fg="#4ec9b0",
+                font=("Segoe UI", 9, "bold"),
             )
 
     def _validate_product_list(self, file_path):
