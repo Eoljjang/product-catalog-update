@@ -1,8 +1,9 @@
 import os
 import sys
 import traceback
+from datetime import datetime
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, filedialog
 from tkinter.scrolledtext import ScrolledText
 from tkinterdnd2 import DND_FILES, TkinterDnD
 import xlwings as xlw
@@ -187,6 +188,14 @@ class ExcelProcessorApp(TkinterDnD.Tk):
             )
             return
 
+        # Prompt user to choose destination directory
+        selected_dir = filedialog.askdirectory(
+            title="Select Output Directory for Updated Catalog Folder"
+        )
+        if not selected_dir:
+            self.status_var.set("Processing cancelled.")
+            return
+
         self.status_var.set("Processing files...")
         self.update()
 
@@ -200,6 +209,12 @@ class ExcelProcessorApp(TkinterDnD.Tk):
             p_sheet_name = p_list_wb.sheets[0].name
 
             ext_ref = f"'[{p_list_name}]{p_sheet_name}'!$A:$A"
+
+            # Format current date as MM-DD-YYYY for clean directory naming
+            date_str = datetime.now().strftime("%m-%d-%Y")
+            folder_name = f"catalog update - {date_str}"
+            output_folder = os.path.join(selected_dir, folder_name)
+            os.makedirs(output_folder, exist_ok=True)
 
             for target_path in self.zone1_files:
                 abs_target = os.path.abspath(target_path)
@@ -301,12 +316,9 @@ class ExcelProcessorApp(TkinterDnD.Tk):
                 # Highlight cells A3, B3 yellow
                 sheet.range("A3:B3").color = (255, 255, 0)
 
-                # Save copy into an "updated" folder in the same directory
-                dir_name, full_filename = os.path.split(abs_target)
+                # Save copy inside the "catalog update - MM-DD-YYYY" folder
+                _, full_filename = os.path.split(abs_target)
                 filename, ext = os.path.splitext(full_filename)
-
-                output_folder = os.path.join(dir_name, "updated")
-                os.makedirs(output_folder, exist_ok=True)
 
                 new_filepath = os.path.join(
                     output_folder, f"{filename} - updated{ext}"
