@@ -39,7 +39,7 @@ jobs:
         # Build the standalone GUI executable
         pyinstaller --noconsole --onefile \
           --add-data "$TKDND_PATH;tkinterdnd2" \
-          --name "Excel Batch Processor" main.py
+          --name "Catalog Update Automation" main.py
 
     - name: Generate Automatic Release Tag
       id: tag
@@ -67,6 +67,6 @@ jobs:
           ### 📝 Recent Commits:
           ${{ steps.commits.outputs.LOGS }}
         generate_release_notes: true
-        files: "dist/Excel Batch Processor.exe"
+        files: "dist/Catalog Update Automation.exe"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

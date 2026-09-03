@@ -9,12 +9,12 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 import xlwings as xlw
 
 
-class ExcelProcessorApp(TkinterDnD.Tk):
+class CatalogUpdateApp(TkinterDnD.Tk):
 
     def __init__(self):
         super().__init__()
 
-        self.title("Excel Batch Formula Processor (Debug Mode)")
+        self.title("Catalog Update Automation (Debug Mode)")
         self.geometry("600x520")
         self.resizable(False, False)
 
@@ -345,5 +345,5 @@ class ExcelProcessorApp(TkinterDnD.Tk):
 
 
 if __name__ == "__main__":
-    app = ExcelProcessorApp()
+    app = CatalogUpdateApp()
     app.mainloop()
