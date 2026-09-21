@@ -136,7 +136,7 @@ class CatalogUpdateApp(TkinterDnD.Tk):
         self.z1_box.bind("<Double-Button-1>", lambda e: self._clear_zone1())
 
         # Zone 2
-        z2_frame = ttk.LabelFrame(self, text=" MMS Product List File - Drag & Drop")
+        z2_frame = ttk.LabelFrame(self, text=" MMS Product List File - Drag & Drop. Only column A should contain data \nand it must be numeric!")
         z2_frame.pack(fill="x", padx=25, pady=8)
 
         self.z2_label = tk.Label(
