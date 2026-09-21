@@ -15,7 +15,7 @@ class CatalogUpdateApp(TkinterDnD.Tk):
         super().__init__()
 
         self.title("Catalog Update Automation (Debug Mode)")
-        self.geometry("620x560")
+        self.geometry("620x600")
         self.resizable(False, False)
 
         # Apply dark theme palette
@@ -85,6 +85,13 @@ class CatalogUpdateApp(TkinterDnD.Tk):
             background=[("active", "#4a4a4a")],
         )
 
+        # Custom Entry style to ensure text is black
+        self.style.configure(
+            "BlackText.TEntry",
+            fieldbackground="#ffffff",
+            foreground="#000000",
+        )
+
     def _build_ui(self):
         header = ttk.Label(
             self,
@@ -121,7 +128,7 @@ class CatalogUpdateApp(TkinterDnD.Tk):
         z1_hint = ttk.Label(
             z1_frame,
             text="Drag and drop Excel files here (double-click to clear)",
-            font=("Segoe UI", 14, "italic"),
+            font=("Segoe UI", 10, "italic"),
             background="#1e1e1e",
             foreground="#858585",
         )
@@ -141,12 +148,40 @@ class CatalogUpdateApp(TkinterDnD.Tk):
             relief="flat",
             highlightthickness=1,
             highlightbackground="#3c3c3c",
-            font=("Segoe UI", 14, "italic"),
+            font=("Segoe UI", 10, "italic"),
         )
         self.z2_label.pack(fill="x", padx=12, pady=10)
         self.z2_label.drop_target_register(DND_FILES)
         self.z2_label.dnd_bind("<<Drop>>", self._on_drop_zone2)
 
+        # Markup Percentage Input Frame
+        markup_frame = ttk.Frame(self)
+        markup_frame.pack(fill="x", padx=25, pady=8)
+
+        lbl_markup = ttk.Label(
+            markup_frame,
+            text="Markup %",
+            font=("Segoe UI", 14, "bold"),
+            background="#1e1e1e",
+            foreground="#e0e0e0",
+        )
+        lbl_markup.pack(side="left", padx=(5, 10))
+
+        # Using standard tk.Entry instead of ttk.Entry for direct control over text and cursor colors
+        self.markup_entry = tk.Entry(
+            markup_frame,
+            font=("Segoe UI", 14),
+            width=10,
+            bg="#ffffff",
+            fg="#000000",
+            insertbackground="#000000",
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground="#3c3c3c",
+        )
+        self.markup_entry.pack(side="left", ipady=3)
+        self.markup_entry.insert(0, "2.5")  # Default value
+        
         # Process Button
         self.btn_run = ttk.Button(
             self,
@@ -154,7 +189,7 @@ class CatalogUpdateApp(TkinterDnD.Tk):
             style="Accent.TButton",
             command=self.process_files,
         )
-        self.btn_run.pack(pady=(15, 5), ipadx=15)
+        self.btn_run.pack(pady=(10, 5), ipadx=15)
 
         # Status Label
         self.status_var = tk.StringVar(value="Ready")
@@ -289,6 +324,21 @@ class CatalogUpdateApp(TkinterDnD.Tk):
             )
             return
 
+        # Validate and retrieve Markup Percentage
+        markup_text = self.markup_entry.get().strip()
+        if not markup_text:
+            messagebox.showwarning(
+                "Missing Input", "Markup % field is required."
+            )
+            return
+        try:
+            markup_val = float(markup_text)
+        except ValueError:
+            messagebox.showerror(
+                "Invalid Input", "Markup % must be a valid numeric number."
+            )
+            return
+
         # Prompt user to choose destination directory
         selected_dir = filedialog.askdirectory(
             title="Select Output Directory for Updated Catalog Folder"
@@ -359,9 +409,12 @@ class CatalogUpdateApp(TkinterDnD.Tk):
                     wb.close()
                     continue
 
+                # Calculate multiplier from user input (e.g. 2.5% -> 1 + 2.5/100 = 1.025)
+                multiplier = 1 + (markup_val / 100)
+
                 # Prepare structured formulas
                 vlookup_formula = f'=IFERROR(VLOOKUP([@CODE], {ext_ref}, 1, FALSE), "")'
-                oo1_formula = '=IF([@OH1]="", [@COST], [@COST]*1.025)'
+                oo1_formula = f'=IF([@OH1]="", [@COST], [@COST]*{multiplier})'
                 oh2_formula = '=IF([@OO1]=0, "", [@OO1])'
 
                 # Target cells on Row 7
@@ -390,12 +443,10 @@ class CatalogUpdateApp(TkinterDnD.Tk):
                     oh2_range = sheet.range(table.api.ListColumns("OH2").DataBodyRange.Address)
                     cost_range = sheet.range(table.api.ListColumns("COST").DataBodyRange.Address)
                     
-                    # Native COM copy and value-paste keeps vertical orientation
                     oh2_range.api.Copy()
                     cost_range.api.PasteSpecial(Paste=-4163)  # -4163 = xlPasteValues
                     app.api.CutCopyMode = False
 
-                    # Clear data contents for OH1, OO1, and OH2 (leaving headers)
                     sheet.range(table.api.ListColumns("OH1").DataBodyRange.Address).clear_contents()
                     sheet.range(table.api.ListColumns("OO1").DataBodyRange.Address).clear_contents()
                     sheet.range(table.api.ListColumns("OH2").DataBodyRange.Address).clear_contents()
@@ -409,7 +460,6 @@ class CatalogUpdateApp(TkinterDnD.Tk):
                         cost_range.api.PasteSpecial(Paste=-4163)
                         app.api.CutCopyMode = False
 
-                        # Clear data rows 7 down to last_row for OH1, OO1, and OH2
                         sheet.range((7, oh1_col), (last_row, oh1_col)).clear_contents()
                         sheet.range((7, oo1_col), (last_row, oo1_col)).clear_contents()
                         sheet.range((7, oh2_col), (last_row, oh2_col)).clear_contents()
@@ -417,7 +467,7 @@ class CatalogUpdateApp(TkinterDnD.Tk):
                 # Highlight cells A3, B3 yellow
                 sheet.range("A3:B3").color = (255, 255, 0)
 
-                # Save copy inside the "catalog update - MM-DD-YYYY" folder
+                # Save copy inside the folder
                 _, full_filename = os.path.split(abs_target)
                 filename, ext = os.path.splitext(full_filename)
 
